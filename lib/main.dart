@@ -1,121 +1,68 @@
+import 'dart:convert';
 
-//import 'dart:js';
 import 'package:flutter/material.dart';
+import 'package:flutter_http_api/model/post.dart';
+import 'package:http/http.dart' as http;
 
-import 'del_update.dart';
+void main() => runApp(MyApp());
 
-// void main() async {
-//   // List mydata = await _getfetchdata_http();
-//   List mydata = await getJsonData();
-
-//   //print(mydata);
-  
-//   runApp(
-//     MaterialApp(
-//       debugShowCheckedModeBanner: false,
-//       home: Scaffold(
-//         appBar: AppBar(
-//           title: Text('Http Api'),
-//         ),
-         
-//         body: GridView.count(
-//   // Create a grid with 2 columns. If you change the scrollDirection to
-//   // horizontal, this produces 2 rows.
-//   crossAxisCount: 2,
-//   // Generate 100 widgets that display their index in the List.
-//   children: List.generate(mydata.length, (index) {
-//     return Image.network(mydata[index]['url']);
-//   }),
-// )
-//       ),
-//     ),
-//   );
-// }
-
-// // ignore: non_constant_identifier_names
-// // Future<List> _getfetchdata_http() async {
-// //   String url = 'https://jsonplaceholder.typicode.com/posts';
-
-// //   http.Response response = await http.get(Uri.parse(url));
-
-// //   return jsonDecode(response.body);
-// // }
-
-// Future<List> getJsonData() async {
-//   String url = 'https://jsonplaceholder.typicode.com/photos';
-
-//   http.Response response = await http.get(Uri.parse(url));
-
-//   return jsonDecode(response.body);
-// }
-
-void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatefulWidget {
+class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
 
   @override
-  _MyAppState createState() {
-    return _MyAppState();
+  Widget build(BuildContext context) {
+    return homeScreen();
   }
 }
 
-class _MyAppState extends State<MyApp> {
-  late Future<Album> _futureAlbum;
+class homeScreen extends StatefulWidget {
+  @override
+  _homeScreenState createState() => _homeScreenState();
+}
 
+// ignore: camel_case_types
+class _homeScreenState extends State<homeScreen> {
+  late Future<Post> futurepost;
   @override
   void initState() {
     super.initState();
-    _futureAlbum = fetchAlbum();
+    futurepost = getHttpData();
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Delete Data Example',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
+      debugShowCheckedModeBanner: false,
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Delete Data Example'),
+          title: Text('Fetching data'),
         ),
         body: Center(
-          child: FutureBuilder<Album>(
-            future: _futureAlbum,
+          child: FutureBuilder<Post>(
+            future: futurepost,
             builder: (context, snapshot) {
-              // If the connection is done,
-              // check for response data or an error.
-              if (snapshot.connectionState == ConnectionState.done) {
-                if (snapshot.hasData) {
-                  return Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      Text(snapshot.data?.title ?? 'Deleted'),
-                      ElevatedButton(
-                        child: const Text('Delete Data'),
-                        onPressed: () {
-                          setState(() {
-                            _futureAlbum =
-                                deleteAlbum(snapshot.data!.id.toString());
-                          });
-                        },
-                      ),
-                    ],
-                  );
-                } else if (snapshot.hasError) {
-                  return Text("${snapshot.error}");
-                }
+              if (snapshot.hasData) {
+                return Text(snapshot.data!.title);
+              } else if (snapshot.hasError) {
+                return Text('${snapshot.error}');
               }
-
-              // By default, show a loading spinner.
-              return const CircularProgressIndicator();
+              return CircularProgressIndicator();
             },
           ),
         ),
       ),
     );
+  }
+
+  Future<Post> getHttpData() async {
+    String url = 'https://jsonplaceholder.typicode.com/posts/2';
+    http.Response response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      //print(jsonDecode(response.body));
+      return Post.fromJson(json.decode(response.body));
+    } else {
+      return throw Exception('Error in fetching');
+    }
   }
 }
